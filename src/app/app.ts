@@ -1,8 +1,8 @@
 import { Component, signal } from '@angular/core';
-import { RouterOutlet } from '@angular/router';
+import { AppshellComponent } from './shared/appshell/appshell.component';
 
 @Component({
-  imports: [RouterOutlet],
+  imports: [AppshellComponent],
   selector: 'app-root',
   styleUrl: './app.css',
   templateUrl: './app.html',
