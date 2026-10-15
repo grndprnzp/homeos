@@ -5,192 +5,163 @@
       <p>Checking authentication status...</p>
     </div>
   } @else if (authService.user(); as user) {
-    <!-- Signed-in state -->
-    <div class="signed-in-card">
-      <div class="avatar-badge">
-        @if (user.photoURL) {
-          <img [src]="user.photoURL" [alt]="user.displayName || 'User Avatar'" class="user-avatar-img" />
-        } @else {
-          <div class="avatar-initials">
-            {{ (user.displayName?.[0] || user.email?.[0] || 'U').toUpperCase() }}
-          </div>
-        }
-      </div>
+    <!-- Signed-in state using Angular Material Card -->
+    <mat-card appearance="outlined" class="auth-mat-card">
+      <mat-card-header>
+        <mat-icon mat-card-avatar class="user-avatar-icon">account_circle</mat-icon>
+        <mat-card-title>Welcome, {{ user.displayName || user.email || 'Friend' }}!</mat-card-title>
+        <mat-card-subtitle>
+          {{ user.isAnonymous ? 'Guest User' : user.email }}
+        </mat-card-subtitle>
+      </mat-card-header>
 
-      <div class="user-meta">
-        <span class="active-badge">
-          <span class="pulse-dot"></span>
-          Active Session
-        </span>
-        <h3 class="user-greeting">Welcome, {{ user.displayName || user.email || 'Friend' }}!</h3>
-        <p class="user-email-text">
+      <mat-card-content class="signed-in-content">
+        <mat-chip-set aria-label="Session status">
+          <mat-chip highlighted>
+            <mat-icon matChipAvatar>check_circle</mat-icon>
+            Active Session
+          </mat-chip>
           @if (user.isAnonymous) {
-            Signed in as a Guest User
-          } @else {
-            {{ user.email }}
+            <mat-chip>Guest Account</mat-chip>
           }
-        </p>
-      </div>
+        </mat-chip-set>
+      </mat-card-content>
 
-      <div class="auth-actions">
-        <button mat-flat-button color="primary" class="primary-action-btn" (click)="navigateToLists()">
+      <mat-card-actions align="end" class="card-actions-gap">
+        <button mat-flat-button color="primary" (click)="navigateToLists()">
           <mat-icon>checklist</mat-icon>
           Open My Lists
         </button>
-        <button mat-stroked-button class="sign-out-btn" (click)="handleLogout()">
+        <button mat-stroked-button (click)="handleLogout()">
           <mat-icon>logout</mat-icon>
           Sign Out
         </button>
-      </div>
-    </div>
+      </mat-card-actions>
+    </mat-card>
   } @else {
-    <!-- Sign-in / Sign-up state -->
-    <div class="auth-card">
-      <!-- Auth Header Tabs -->
-      <div class="auth-tabs" role="tablist">
-        <button
-          type="button"
-          class="tab-btn"
-          [class.active]="mode() === 'signin'"
-          (click)="setMode('signin')"
-          role="tab"
-          [attr.aria-selected]="mode() === 'signin'"
-          id="tab-signin"
-        >
-          Sign In
-        </button>
-        <button
-          type="button"
-          class="tab-btn"
-          [class.active]="mode() === 'signup'"
-          (click)="setMode('signup')"
-          role="tab"
-          [attr.aria-selected]="mode() === 'signup'"
-          id="tab-signup"
-        >
-          Create Account
-        </button>
-      </div>
+    <!-- Sign-in / Sign-up state using Angular Material components -->
+    <mat-card appearance="outlined" class="auth-mat-card">
+      <mat-card-header>
+        <mat-card-title>{{ mode() === 'signin' ? 'Sign In to HomeOS' : 'Create HomeOS Account' }}</mat-card-title>
+        <mat-card-subtitle>
+          {{ mode() === 'signin'
+              ? 'Access your synchronized household lists, tasks, and reminders'
+              : 'Join to start organizing and collaborating with your household' }}
+        </mat-card-subtitle>
+      </mat-card-header>
 
-      <div class="card-inner-body">
-        <div class="auth-headline">
-          <h3>{{ mode() === 'signin' ? 'Welcome back to HomeOS' : 'Get started with HomeOS' }}</h3>
-          <p class="auth-subtext">
-            {{ mode() === 'signin'
-                ? 'Sign in to access your synchronized lists and reminders'
-                : 'Join HomeOS to collaborate on tasks, lists, and schedules' }}
-          </p>
-        </div>
+      <mat-card-content class="form-content">
+        <!-- Angular Material Button Toggle for mode switching -->
+        <mat-button-toggle-group
+          [value]="mode()"
+          (change)="setMode($event.value)"
+          aria-label="Authentication Mode"
+          class="auth-toggle-group"
+        >
+          <mat-button-toggle value="signin">Sign In</mat-button-toggle>
+          <mat-button-toggle value="signup">Create Account</mat-button-toggle>
+        </mat-button-toggle-group>
 
         @if (authService.authError(); as errorMsg) {
-          <div class="error-banner" role="alert">
-            <mat-icon class="error-icon">error_outline</mat-icon>
-            <span class="error-text">{{ errorMsg }}</span>
-            <button type="button" class="close-error-btn" (click)="authService.clearError()" aria-label="Dismiss error">
+          <div class="auth-error-chip" role="alert">
+            <mat-icon color="warn">error</mat-icon>
+            <span>{{ errorMsg }}</span>
+            <button mat-icon-button (click)="authService.clearError()" aria-label="Dismiss error">
               <mat-icon>close</mat-icon>
             </button>
           </div>
         }
 
-        <!-- Google One-Click Button -->
-        <button
-          type="button"
-          class="google-btn"
-          [disabled]="isSubmitting()"
-          (click)="handleGoogleSignIn()"
-          id="btn-google-auth"
-        >
-          <svg class="google-icon" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
-            <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-            <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-            <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
-            <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
-          </svg>
-          <span>Continue with Google</span>
-        </button>
+        <!-- Semantic Form with standard Angular Material Form Fields -->
+        <form (ngSubmit)="handleEmailSubmit()" class="auth-form" #authForm="ngForm" novalidate>
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Email address</mat-label>
+            <input
+              matInput
+              id="auth-email"
+              name="email"
+              type="email"
+              required
+              autocomplete="username"
+              [(ngModel)]="email"
+              [disabled]="isSubmitting()"
+            />
+            <mat-icon matPrefix>mail</mat-icon>
+          </mat-form-field>
 
-        <div class="auth-divider">
-          <span>or continue with email</span>
-        </div>
-
-        <!-- Semantic Form -->
-        <form (ngSubmit)="handleEmailSubmit()" class="email-form" #authForm="ngForm" novalidate>
-          <div class="form-group">
-            <label for="auth-email" class="input-label">Email address</label>
-            <div class="input-wrapper">
-              <mat-icon class="field-icon">mail_outline</mat-icon>
-              <input
-                id="auth-email"
-                name="email"
-                type="email"
-                required
-                autocomplete="username"
-                [(ngModel)]="email"
-                placeholder="name@example.com"
-                class="custom-input"
-                [disabled]="isSubmitting()"
-              />
-            </div>
-          </div>
-
-          <div class="form-group">
-            <label [for]="mode() === 'signin' ? 'auth-password' : 'auth-new-password'" class="input-label">
-              Password
-            </label>
-            <div class="input-wrapper">
-              <mat-icon class="field-icon">lock_outline</mat-icon>
-              <input
-                [id]="mode() === 'signin' ? 'auth-password' : 'auth-new-password'"
-                [name]="mode() === 'signin' ? 'password' : 'new-password'"
-                [type]="showPassword() ? 'text' : 'password'"
-                required
-                [attr.autocomplete]="mode() === 'signin' ? 'current-password' : 'new-password'"
-                [(ngModel)]="password"
-                [placeholder]="mode() === 'signin' ? 'Enter your password' : 'Create a strong password (6+ chars)'"
-                class="custom-input"
-                [disabled]="isSubmitting()"
-              />
-              <button
-                type="button"
-                class="toggle-pwd-btn"
-                (click)="togglePasswordVisibility()"
-                [attr.aria-label]="showPassword() ? 'Hide password' : 'Show password'"
-              >
-                <mat-icon>{{ showPassword() ? 'visibility_off' : 'visibility' }}</mat-icon>
-              </button>
-            </div>
-          </div>
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Password</mat-label>
+            <input
+              matInput
+              [id]="mode() === 'signin' ? 'auth-password' : 'auth-new-password'"
+              [name]="mode() === 'signin' ? 'password' : 'new-password'"
+              [type]="showPassword() ? 'text' : 'password'"
+              required
+              [attr.autocomplete]="mode() === 'signin' ? 'current-password' : 'new-password'"
+              [(ngModel)]="password"
+              [disabled]="isSubmitting()"
+            />
+            <mat-icon matPrefix>lock</mat-icon>
+            <button
+              mat-icon-button
+              matSuffix
+              type="button"
+              (click)="togglePasswordVisibility()"
+              [attr.aria-label]="showPassword() ? 'Hide password' : 'Show password'"
+            >
+              <mat-icon>{{ showPassword() ? 'visibility_off' : 'visibility' }}</mat-icon>
+            </button>
+          </mat-form-field>
 
           <button
+            mat-flat-button
+            color="primary"
             type="submit"
-            class="submit-btn"
+            class="full-width-btn"
             [disabled]="isSubmitting() || !email || !password"
             id="btn-email-submit"
           >
             @if (isSubmitting()) {
-              <mat-spinner diameter="20" class="btn-spinner"></mat-spinner>
-              <span>{{ mode() === 'signin' ? 'Signing in...' : 'Creating account...' }}</span>
+              <mat-spinner diameter="20"></mat-spinner>
             } @else {
-              <span>{{ mode() === 'signin' ? 'Sign In with Email' : 'Create Account' }}</span>
-              <mat-icon class="btn-arrow">arrow_forward</mat-icon>
+              <mat-icon>{{ mode() === 'signin' ? 'login' : 'person_add' }}</mat-icon>
             }
+            <span>{{ isSubmitting() ? 'Please wait...' : (mode() === 'signin' ? 'Sign In with Email' : 'Create Account') }}</span>
           </button>
         </form>
 
-        <!-- Guest Access -->
-        <div class="guest-container">
-          <button
-            type="button"
-            class="guest-link-btn"
-            [disabled]="isSubmitting()"
-            (click)="handleGuestSignIn()"
-            id="btn-guest-auth"
-          >
-            <mat-icon>explore</mat-icon>
-            <span>Skip for now, try as Guest</span>
-          </button>
+        <div class="divider-row">
+          <mat-divider></mat-divider>
+          <span class="divider-label">OR</span>
+          <mat-divider></mat-divider>
         </div>
-      </div>
-    </div>
+
+        <!-- Google Sign In via standard Material stroked button -->
+        <button
+          mat-stroked-button
+          type="button"
+          class="full-width-btn"
+          [disabled]="isSubmitting()"
+          (click)="handleGoogleSignIn()"
+          id="btn-google-auth"
+        >
+          <mat-icon>account_circle</mat-icon>
+          <span>Continue with Google</span>
+        </button>
+
+        <!-- Guest Sign In via standard Material text button -->
+        <button
+          mat-button
+          type="button"
+          class="full-width-btn"
+          [disabled]="isSubmitting()"
+          (click)="handleGuestSignIn()"
+          id="btn-guest-auth"
+        >
+          <mat-icon>explore</mat-icon>
+          <span>Continue as Guest</span>
+        </button>
+      </mat-card-content>
+    </mat-card>
   }
 </div>

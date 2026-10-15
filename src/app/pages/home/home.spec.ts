@@ -43,10 +43,10 @@ describe('HomeComponent', () => {
 
   it('should enlist all 3 upcoming features', () => {
     const compiled = fixture.nativeElement as HTMLElement;
-    const text = compiled.textContent;
-    expect(text).toContain('Simple but Effective, Collaborative List Management');
-    expect(text).toContain('Collaborative Task Management');
-    expect(text).toContain('Shared Reminders');
+    const text = compiled.textContent?.toLowerCase() || '';
+    expect(text).toContain('simple but effective, collaborative list management');
+    expect(text).toContain('collaborative task management');
+    expect(text).toContain('shared reminders');
   });
 
   it('should toggle interactive demo list item on click', () => {

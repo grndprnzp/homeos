@@ -1,8 +1,14 @@
 import { Component, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatChipsModule } from '@angular/material/chips';
+import { MatListModule } from '@angular/material/list';
+import { MatCheckboxModule } from '@angular/material/checkbox';
+import { MatSlideToggleModule } from '@angular/material/slide-toggle';
+import { MatDividerModule } from '@angular/material/divider';
 import { AuthCardComponent } from '../../shared/auth-card/auth-card.component';
 import { AuthService } from '../../core/services/auth.service';
 
@@ -35,9 +41,15 @@ interface DemoReminderItem {
   standalone: true,
   imports: [
     CommonModule,
+    FormsModule,
+    MatCardModule,
     MatButtonModule,
     MatIconModule,
     MatChipsModule,
+    MatListModule,
+    MatCheckboxModule,
+    MatSlideToggleModule,
+    MatDividerModule,
     AuthCardComponent,
   ],
   templateUrl: './home.html',
@@ -46,7 +58,6 @@ interface DemoReminderItem {
 export class HomeComponent {
   readonly authService = inject(AuthService);
 
-  // Interactive demo states to make the upcoming feature previews tactile & engaging
   readonly demoListItems = signal<DemoListItem[]>([
     { id: 1, text: 'Oat milk (Barista Edition)', author: 'Sarah', checked: true, category: 'Groceries' },
     { id: 2, text: 'Organic sourdough loaf', author: 'Max', checked: false, category: 'Bakery' },

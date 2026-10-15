@@ -2,10 +2,14 @@ import { Component, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
+import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
-import { MatIconModule } from '@angular/material/icon';
+import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
+import { MatIconModule } from '@angular/material/icon';
+import { MatDividerModule } from '@angular/material/divider';
+import { MatChipsModule } from '@angular/material/chips';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { AuthService } from '../../core/services/auth.service';
 
@@ -15,10 +19,14 @@ import { AuthService } from '../../core/services/auth.service';
   imports: [
     CommonModule,
     FormsModule,
+    MatCardModule,
     MatButtonModule,
-    MatIconModule,
+    MatButtonToggleModule,
     MatFormFieldModule,
     MatInputModule,
+    MatIconModule,
+    MatDividerModule,
+    MatChipsModule,
     MatProgressSpinnerModule,
   ],
   templateUrl: './auth-card.component.html',
@@ -46,11 +54,8 @@ export class AuthCardComponent {
 
   async handleGoogleSignIn(): Promise<void> {
     this.isSubmitting.set(true);
-    const user = await this.authService.signInWithGoogle();
+    await this.authService.signInWithGoogle();
     this.isSubmitting.set(false);
-    if (user) {
-      // successfully logged in
-    }
   }
 
   async handleEmailSubmit(): Promise<void> {
