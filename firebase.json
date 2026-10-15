@@ -56,7 +56,11 @@
       "emailPassword": true,
       "googleSignIn": {
         "oAuthBrandDisplayName": "HomeOS",
-        "supportEmail": "grndprnzp@gmail.com"
+        "supportEmail": "grndprnzp@gmail.com",
+        "authorizedRedirectUris": [
+          "https://homeos-164f4.firebaseapp.com/__/auth/handler",
+          "http://localhost"
+        ]
       }
     }
   }

@@ -1,1 +1,266 @@
-<h1>Home</h1>
+<div class="landing-page-root">
+  <!-- Hero Section -->
+  <header class="hero-section">
+    <div class="hero-glow"></div>
+    <div class="hero-content">
+      <div class="hero-badge">
+        <span class="badge-icon">✨</span>
+        <span>Introducing HomeOS • Collaborative Living</span>
+      </div>
+
+      <h1 class="hero-title">
+        Everyday Harmony, <br />
+        <span class="gradient-text">Made Effortless.</span>
+      </h1>
+
+      <p class="hero-subtitle">
+        Your household's shared operating system. Say goodbye to forgotten groceries, neglected chores,
+        and crossed wires with seamless real-time coordination for everyone under your roof.
+      </p>
+
+      <div class="hero-cta-group">
+        <button
+          type="button"
+          mat-flat-button
+          class="primary-cta-btn"
+          (click)="scrollToSection('auth-section')"
+          id="btn-hero-get-started"
+        >
+          <mat-icon>login</mat-icon>
+          <span>Get Started Free</span>
+        </button>
+        <button
+          type="button"
+          mat-stroked-button
+          class="secondary-cta-btn"
+          (click)="scrollToSection('upcoming-features')"
+          id="btn-hero-features"
+        >
+          <mat-icon>arrow_downward</mat-icon>
+          <span>Explore Features</span>
+        </button>
+      </div>
+
+      <!-- Feature Pill Highlights -->
+      <div class="hero-pills">
+        <span class="pill-item">
+          <mat-icon>sync</mat-icon> Real-Time Sync
+        </span>
+        <span class="pill-item">
+          <mat-icon>group</mat-icon> Shared Household
+        </span>
+        <span class="pill-item">
+          <mat-icon>notifications_active</mat-icon> Instant Alerts
+        </span>
+        <span class="pill-item">
+          <mat-icon>lock</mat-icon> Firebase Protected
+        </span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Upcoming Features Section -->
+  <section class="features-section" id="upcoming-features">
+    <div class="section-header">
+      <span class="section-tag">Roadmap & Vision</span>
+      <h2 class="section-title">Upcoming Features Built for Togetherness</h2>
+      <p class="section-description">
+        Experience a connected household with tools designed to streamline daily living without friction or clutter.
+      </p>
+    </div>
+
+    <div class="features-grid">
+      <!-- Feature 1: Collaborative List Management -->
+      <article class="feature-card">
+        <div class="card-icon-wrapper list-color">
+          <mat-icon>format_list_bulleted</mat-icon>
+        </div>
+        <div class="card-header-content">
+          <span class="feature-status-badge">Core Pillar</span>
+          <h3 class="feature-title">Simple but Effective, Collaborative List Management</h3>
+          <p class="feature-text">
+            Keep groceries, hardware runs, and packing checklists perfectly synchronized in real time.
+            Cross off items as you shop, see who added what, and never accidentally buy milk twice.
+          </p>
+        </div>
+
+        <!-- Interactive List Demo Mockup -->
+        <div class="feature-preview-box">
+          <div class="preview-header">
+            <span class="preview-title">
+              <mat-icon class="preview-icon">shopping_bag</mat-icon>
+              Weekly Groceries
+            </span>
+            <span class="preview-badge live-sync">
+              <span class="sync-dot"></span> Live
+            </span>
+          </div>
+
+          <div class="interactive-list">
+            @for (item of demoListItems(); track item.id) {
+              <div
+                class="list-row"
+                [class.checked]="item.checked"
+                (click)="toggleDemoItem(item.id)"
+                role="button"
+                tabindex="0"
+                (keydown.enter)="toggleDemoItem(item.id)"
+              >
+                <div class="custom-checkbox">
+                  <mat-icon *ngIf="item.checked">check</mat-icon>
+                </div>
+                <div class="item-details">
+                  <span class="item-name">{{ item.text }}</span>
+                  <span class="item-author">Added by {{ item.author }} • {{ item.category }}</span>
+                </div>
+              </div>
+            }
+          </div>
+          <span class="preview-hint">Tap any item to test real-time checklist toggling</span>
+        </div>
+      </article>
+
+      <!-- Feature 2: Collaborative Task Management -->
+      <article class="feature-card">
+        <div class="card-icon-wrapper task-color">
+          <mat-icon>task_alt</mat-icon>
+        </div>
+        <div class="card-header-content">
+          <span class="feature-status-badge">In Development</span>
+          <h3 class="feature-title">Collaborative Task Management</h3>
+          <p class="feature-text">
+            Fair, transparent chore distribution. Organize recurring routines, assign tasks to housemates or family members,
+            and monitor progress without nagging or confusion.
+          </p>
+        </div>
+
+        <!-- Interactive Task Demo Mockup -->
+        <div class="feature-preview-box">
+          <div class="preview-header">
+            <span class="preview-title">
+              <mat-icon class="preview-icon">cleaning_services</mat-icon>
+              Household Chores
+            </span>
+            <span class="preview-badge chore-badge">Sprint 1</span>
+          </div>
+
+          <div class="interactive-tasks">
+            @for (task of demoTasks(); track task.id) {
+              <div
+                class="task-row"
+                [attr.data-status]="task.status"
+                (click)="toggleDemoTask(task.id)"
+                role="button"
+                tabindex="0"
+                (keydown.enter)="toggleDemoTask(task.id)"
+              >
+                <div class="task-info">
+                  <span class="task-title-text">{{ task.title }}</span>
+                  <div class="task-meta-row">
+                    <span class="assignee-tag">
+                      <mat-icon>person</mat-icon>
+                      {{ task.assignee }}
+                    </span>
+                    <span class="category-tag">{{ task.tag }}</span>
+                  </div>
+                </div>
+
+                <div class="task-status-indicator" [class]="task.status">
+                  @switch (task.status) {
+                    @case ('done') { <span>Done</span> }
+                    @case ('in-progress') { <span>In Progress</span> }
+                    @default { <span>To Do</span> }
+                  }
+                </div>
+              </div>
+            }
+          </div>
+          <span class="preview-hint">Tap a task to cycle its progress state</span>
+        </div>
+      </article>
+
+      <!-- Feature 3: Shared Reminders -->
+      <article class="feature-card">
+        <div class="card-icon-wrapper reminder-color">
+          <mat-icon>notifications_active</mat-icon>
+        </div>
+        <div class="card-header-content">
+          <span class="feature-status-badge">Coming Soon</span>
+          <h3 class="feature-title">Shared Reminders</h3>
+          <p class="feature-text">
+            Mutual household alerts that keep everyone in sync. From recycling pickup schedules and boiler maintenance
+            to parcel deliveries, ensure important household dates are never overlooked.
+          </p>
+        </div>
+
+        <!-- Interactive Reminders Demo Mockup -->
+        <div class="feature-preview-box">
+          <div class="preview-header">
+            <span class="preview-title">
+              <mat-icon class="preview-icon">event_available</mat-icon>
+              Scheduled Pings
+            </span>
+            <span class="preview-badge reminder-badge">Synced</span>
+          </div>
+
+          <div class="interactive-reminders">
+            @for (reminder of demoReminders(); track reminder.id) {
+              <div
+                class="reminder-row"
+                [class.inactive]="!reminder.active"
+                (click)="toggleDemoReminder(reminder.id)"
+                role="button"
+                tabindex="0"
+                (keydown.enter)="toggleDemoReminder(reminder.id)"
+              >
+                <div class="reminder-icon-box">
+                  <mat-icon>{{ reminder.active ? 'alarm_on' : 'alarm_off' }}</mat-icon>
+                </div>
+                <div class="reminder-text-box">
+                  <span class="reminder-name">{{ reminder.title }}</span>
+                  <span class="reminder-sub">{{ reminder.time }} • {{ reminder.type }}</span>
+                </div>
+                <div class="reminder-toggle-state">
+                  <span class="state-pill" [class.on]="reminder.active">
+                    {{ reminder.active ? 'Active' : 'Muted' }}
+                  </span>
+                </div>
+              </div>
+            }
+          </div>
+          <span class="preview-hint">Tap a reminder to toggle its alert status</span>
+        </div>
+      </article>
+    </div>
+  </section>
+
+  <!-- Auth Finish Section -->
+  <section class="auth-section-container" id="auth-section">
+    <div class="auth-section-header">
+      <span class="section-tag">Get Started</span>
+      <h2 class="auth-title">Join HomeOS Today</h2>
+      <p class="auth-subtitle">
+        Sign in or create your free account to unlock your household's collaborative dashboard.
+      </p>
+    </div>
+
+    <!-- Firebase Auth Card Component -->
+    <div class="auth-card-anchor">
+      <app-auth-card></app-auth-card>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="landing-footer">
+    <div class="footer-inner">
+      <div class="brand-row">
+        <span class="brand-name">HomeOS</span>
+        <span class="brand-dot">•</span>
+        <span class="brand-desc">Effortless Home Collaboration</span>
+      </div>
+      <p class="footer-sub">
+        Securely powered by Firebase Authentication & Google Cloud.
+      </p>
+    </div>
+  </footer>
+</div>

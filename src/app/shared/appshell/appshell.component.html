@@ -1,30 +1,98 @@
 @let isHandset = this.isHandset();
 
 <mat-sidenav-container class="sidenav-container">
-  <mat-sidenav #drawer class="sidenav" fixedInViewport [attr.role]="isHandset ? 'dialog' : 'navigation'"
-    [mode]="isHandset ? 'over' : 'side'" [opened]="isHandset === false">
-    <mat-toolbar color="primary">
-      <span>Menu</span>
+  <mat-sidenav
+    #drawer
+    class="sidenav"
+    fixedInViewport
+    [attr.role]="isHandset ? 'dialog' : 'navigation'"
+    [mode]="isHandset ? 'over' : 'side'"
+    [opened]="isHandset === false"
+  >
+    <mat-toolbar class="sidenav-toolbar">
+      <div class="brand-container">
+        <mat-icon class="brand-icon">cottage</mat-icon>
+        <span class="brand-title">homeos</span>
+      </div>
       <span class="spacer"></span>
-      <button type="button" aria-label="Close sidenav" matIconButton (click)="drawer.close()">
-        <mat-icon aria-label="Side nav close icon">close</mat-icon>
-      </button>
-    </mat-toolbar>
-    <mat-nav-list>
-      <a mat-list-item routerLink="/">Home</a>
-      <a mat-list-item routerLink="/my-lists">Listen</a>
-      <a mat-list-item href="#">Link 3</a>
-    </mat-nav-list>
-  </mat-sidenav>
-  <mat-sidenav-content>
-    <mat-toolbar>
-      @if (isHandset || !drawer.opened) {
-      <button type="button" aria-label="Toggle sidenav" matIconButton (click)="drawer.toggle()">
-        <mat-icon aria-label="Side nav toggle icon">menu</mat-icon>
-      </button>
+      @if (isHandset) {
+        <button type="button" aria-label="Close sidenav" mat-icon-button (click)="drawer.close()">
+          <mat-icon>close</mat-icon>
+        </button>
       }
-      <span>homeos</span>
     </mat-toolbar>
+
+    <mat-nav-list class="nav-list">
+      <a mat-list-item routerLink="/" (click)="isHandset ? drawer.close() : null">
+        <mat-icon matListItemIcon>home</mat-icon>
+        <span matListItemTitle>Home</span>
+      </a>
+      <a mat-list-item routerLink="/my-lists" (click)="isHandset ? drawer.close() : null">
+        <mat-icon matListItemIcon>format_list_bulleted</mat-icon>
+        <span matListItemTitle>Listen</span>
+      </a>
+    </mat-nav-list>
+
+    <!-- Drawer Footer User Info -->
+    @if (authService.user(); as user) {
+      <div class="drawer-user-footer">
+        <div class="drawer-user-info">
+          @if (user.photoURL) {
+            <img [src]="user.photoURL" [alt]="user.displayName || 'Avatar'" class="drawer-avatar" />
+          } @else {
+            <div class="drawer-avatar-placeholder">
+              {{ (user.displayName?.[0] || user.email?.[0] || 'U').toUpperCase() }}
+            </div>
+          }
+          <div class="drawer-user-text">
+            <span class="drawer-user-name">{{ user.displayName || user.email || 'Guest' }}</span>
+            <span class="drawer-user-status">Online</span>
+          </div>
+        </div>
+        <button mat-icon-button (click)="logout()" aria-label="Sign Out" title="Sign Out">
+          <mat-icon>logout</mat-icon>
+        </button>
+      </div>
+    }
+  </mat-sidenav>
+
+  <mat-sidenav-content>
+    <mat-toolbar class="main-toolbar">
+      @if (isHandset || !drawer.opened) {
+        <button type="button" aria-label="Toggle sidenav" mat-icon-button (click)="drawer.toggle()">
+          <mat-icon>menu</mat-icon>
+        </button>
+      }
+      <div class="toolbar-brand" routerLink="/">
+        <mat-icon class="toolbar-brand-icon">cottage</mat-icon>
+        <span class="toolbar-brand-text">homeos</span>
+      </div>
+
+      <span class="spacer"></span>
+
+      <!-- Auth Action in Toolbar -->
+      @if (authService.user(); as user) {
+        <div class="toolbar-user-badge">
+          @if (user.photoURL) {
+            <img [src]="user.photoURL" [alt]="user.displayName || 'Avatar'" class="toolbar-avatar" />
+          } @else {
+            <div class="toolbar-avatar-placeholder">
+              {{ (user.displayName?.[0] || user.email?.[0] || 'U').toUpperCase() }}
+            </div>
+          }
+          <span class="toolbar-user-name">{{ user.displayName || (user.isAnonymous ? 'Guest' : user.email?.split('@')?.[0]) }}</span>
+          <button mat-icon-button (click)="logout()" aria-label="Sign Out" title="Sign Out" class="toolbar-logout-btn">
+            <mat-icon>logout</mat-icon>
+          </button>
+        </div>
+      } @else {
+        <a mat-stroked-button routerLink="/" class="toolbar-login-btn">
+          <mat-icon>login</mat-icon>
+          <span>Sign In</span>
+        </a>
+      }
+    </mat-toolbar>
+
     <main class="page-content">
       <router-outlet />
     </main>
