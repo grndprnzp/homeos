@@ -1,0 +1,123 @@
+.dialog-content {
+  min-width: min(680px, 85vw);
+  max-height: 75vh;
+  padding-top: 8px;
+}
+
+.error-banner mat-card-content {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--mat-sys-error);
+}
+
+.list-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+
+.subtitle-text {
+  margin: 0;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.empty-state-card mat-card-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 24px;
+  text-align: center;
+  gap: 8px;
+}
+
+.empty-icon {
+  font-size: 40px;
+  width: 40px;
+  height: 40px;
+  color: var(--mat-sys-primary);
+}
+
+.template-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.form-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.full-width {
+  width: 100%;
+}
+
+.system-fields-info {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 12px;
+  border-radius: 8px;
+  background-color: var(--mat-sys-surface-container);
+  font-size: 0.875rem;
+}
+
+.fields-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 8px;
+}
+
+.fields-section-header h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.field-editor-card {
+  margin-bottom: 8px;
+}
+
+.field-row-main {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.field-label-input {
+  flex: 1 1 220px;
+}
+
+.field-type-select {
+  flex: 1 1 180px;
+}
+
+.field-item-actions {
+  display: flex;
+  align-items: center;
+}
+
+.field-options-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.autocomplete-source-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.half-width {
+  flex: 1 1 220px;
+}

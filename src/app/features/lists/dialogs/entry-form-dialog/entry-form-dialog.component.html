@@ -1,0 +1,287 @@
+<h2 mat-dialog-title>
+  {{ isEdit() ? 'Eintrag bearbeiten' : 'Neuer Listeneintrag' }}
+</h2>
+
+<mat-dialog-content class="dialog-content">
+  @if (saving()) {
+    <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+  }
+
+  @if (errorMsg(); as err) {
+    <mat-card appearance="outlined" class="error-banner">
+      <mat-card-content>
+        <mat-icon color="warn">error_outline</mat-icon>
+        <span>{{ err }}</span>
+      </mat-card-content>
+    </mat-card>
+  }
+
+  <div class="form-container">
+    @if (data.list.mode === 'mixed') {
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Datentyp für diesen Eintrag</mat-label>
+        <mat-select
+          [ngModel]="selectedDataTypeId()"
+          (ngModelChange)="onDataTypeSelectionChange($event)"
+        >
+          <mat-option [value]="null">
+            Schneller Standard-Eintrag (ohne Datentyp-Vorlage)
+          </mat-option>
+          @for (dt of dataTypeService.dataTypes(); track dt.id) {
+            <mat-option [value]="dt.id">{{ dt.name }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+    }
+
+    @if (!activeDataType()) {
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Eintrag / Text</mat-label>
+        <input
+          matInput
+          [ngModel]="title()"
+          (ngModelChange)="title.set($event)"
+          placeholder="z.B. Hafermilch 2L, Glühbirnen besorgen..."
+          required
+        />
+      </mat-form-field>
+    } @else {
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Kurztitel / Notiz (optional)</mat-label>
+        <input
+          matInput
+          [ngModel]="title()"
+          (ngModelChange)="title.set($event)"
+          placeholder="Optionaler Titel für diesen Eintrag"
+        />
+      </mat-form-field>
+
+      <!-- Dynamic fields of the selected DataTypeTemplate -->
+      <div class="dynamic-fields-grid">
+        @for (field of activeDataType()!.fields; track field.id) {
+          @switch (field.type) {
+            @case ('text') {
+              <mat-form-field appearance="outline" class="full-width">
+                <mat-label>{{ field.label }}</mat-label>
+                @if (field.autocomplete) {
+                  <input
+                    matInput
+                    [ngModel]="getFieldValue(field.id)"
+                    (ngModelChange)="setFieldValue(field.id, $event)"
+                    [matAutocomplete]="dynAuto"
+                    [required]="!!field.required"
+                  />
+                  <mat-autocomplete #dynAuto="matAutocomplete">
+                    @for (suggestion of getFilteredAutocomplete(field); track suggestion) {
+                      <mat-option [value]="suggestion">{{ suggestion }}</mat-option>
+                    }
+                  </mat-autocomplete>
+                } @else {
+                  <input
+                    matInput
+                    [ngModel]="getFieldValue(field.id)"
+                    (ngModelChange)="setFieldValue(field.id, $event)"
+                    [required]="!!field.required"
+                  />
+                }
+              </mat-form-field>
+            }
+
+            @case ('number') {
+              <mat-form-field appearance="outline" class="full-width">
+                <mat-label>{{ field.label }}</mat-label>
+                <input
+                  matInput
+                  type="number"
+                  [ngModel]="getFieldValue(field.id)"
+                  (ngModelChange)="setFieldValue(field.id, $event)"
+                  [required]="!!field.required"
+                />
+              </mat-form-field>
+            }
+
+            @case ('date') {
+              <mat-form-field appearance="outline" class="full-width">
+                <mat-label>{{ field.label }}</mat-label>
+                <input
+                  matInput
+                  type="date"
+                  [ngModel]="getFieldValue(field.id)"
+                  (ngModelChange)="setFieldValue(field.id, $event)"
+                  [required]="!!field.required"
+                />
+              </mat-form-field>
+            }
+
+            @case ('time') {
+              <mat-form-field appearance="outline" class="full-width">
+                <mat-label>{{ field.label }}</mat-label>
+                <input
+                  matInput
+                  type="time"
+                  [ngModel]="getFieldValue(field.id)"
+                  (ngModelChange)="setFieldValue(field.id, $event)"
+                  [required]="!!field.required"
+                />
+              </mat-form-field>
+            }
+
+            @case ('datetime') {
+              <mat-form-field appearance="outline" class="full-width">
+                <mat-label>{{ field.label }}</mat-label>
+                <input
+                  matInput
+                  type="datetime-local"
+                  [ngModel]="getFieldValue(field.id)"
+                  (ngModelChange)="setFieldValue(field.id, $event)"
+                  [required]="!!field.required"
+                />
+              </mat-form-field>
+            }
+
+            @case ('checkbox') {
+              <div class="checkbox-field-wrapper">
+                <mat-checkbox
+                  [ngModel]="!!getFieldValue(field.id)"
+                  (ngModelChange)="setFieldValue(field.id, $event)"
+                >
+                  {{ field.label }}
+                </mat-checkbox>
+              </div>
+            }
+
+            @case ('select_text') {
+              <mat-form-field appearance="outline" class="full-width">
+                <mat-label>{{ field.label }}</mat-label>
+                <mat-select
+                  [ngModel]="getFieldValue(field.id)"
+                  (ngModelChange)="setFieldValue(field.id, $event)"
+                  [multiple]="!!field.multiple"
+                  [required]="!!field.required"
+                >
+                  @for (opt of field.options || []; track opt) {
+                    <mat-option [value]="opt">{{ opt }}</mat-option>
+                  }
+                </mat-select>
+              </mat-form-field>
+            }
+
+            @case ('select_number') {
+              <mat-form-field appearance="outline" class="full-width">
+                <mat-label>{{ field.label }}</mat-label>
+                <mat-select
+                  [ngModel]="getFieldValue(field.id)"
+                  (ngModelChange)="setFieldValue(field.id, $event)"
+                  [multiple]="!!field.multiple"
+                  [required]="!!field.required"
+                >
+                  @for (opt of field.numericOptions || []; track opt) {
+                    <mat-option [value]="opt">{{ opt }}</mat-option>
+                  }
+                </mat-select>
+              </mat-form-field>
+            }
+
+            @case ('images') {
+              <mat-card appearance="outlined" class="images-upload-card">
+                <mat-card-content>
+                  <div class="images-header">
+                    <span class="images-label">
+                      {{ field.label }}
+                      @if (field.required) {
+                        *
+                      }
+                    </span>
+                    <button
+                      mat-stroked-button
+                      type="button"
+                      (click)="fileInput.click()"
+                    >
+                      <mat-icon>add_photo_alternate</mat-icon>
+                      <span>{{ (field.multiple ?? true) ? 'Bilder auswählen' : 'Bild auswählen' }}</span>
+                    </button>
+                    <input
+                      #fileInput
+                      type="file"
+                      accept="image/*"
+                      [multiple]="field.multiple ?? true"
+                      (change)="onFilesSelected(field, $event)"
+                      hidden
+                    />
+                  </div>
+
+                  @if (getAttachmentsForField(field.id).length > 0) {
+                    <div class="attachments-preview-grid">
+                      @for (att of getAttachmentsForField(field.id); track att.id) {
+                        <div class="attachment-thumb">
+                          <img [src]="att.downloadUrl" [alt]="att.fileName" />
+                          <button
+                            mat-icon-button
+                            color="warn"
+                            type="button"
+                            (click)="removeExistingAttachment(att.id)"
+                            aria-label="Bild entfernen"
+                          >
+                            <mat-icon>delete</mat-icon>
+                          </button>
+                        </div>
+                      }
+                    </div>
+                  }
+
+                  @if (getPendingFilesForField(field.id).length > 0) {
+                    <mat-chip-set aria-label="Ausgewählte Dateien zum Hochladen">
+                      @for (file of getPendingFilesForField(field.id); track file.name; let fIdx = $index) {
+                        <mat-chip-row (removed)="removePendingFile(field.id, fIdx)">
+                          <mat-icon matChipAvatar>upload_file</mat-icon>
+                          {{ file.name }}
+                          <button matChipRemove aria-label="Datei entfernen">
+                            <mat-icon>cancel</mat-icon>
+                          </button>
+                        </mat-chip-row>
+                      }
+                    </mat-chip-set>
+                  }
+                </mat-card-content>
+              </mat-card>
+            }
+          }
+        }
+      </div>
+    }
+
+    <!-- Standard System Properties -->
+    <div class="standard-meta-row">
+      <mat-form-field appearance="outline" class="assignee-input">
+        <mat-label>Zuständige Person (optional)</mat-label>
+        <input
+          matInput
+          [ngModel]="assignee()"
+          (ngModelChange)="assignee.set($event)"
+          placeholder="z.B. Max, Sarah..."
+        />
+        <mat-icon matPrefix>person_outline</mat-icon>
+      </mat-form-field>
+
+      <mat-slide-toggle
+        [ngModel]="hidden()"
+        (ngModelChange)="hidden.set($event)"
+      >
+        Eintrag ausblenden (Erledigt)
+      </mat-slide-toggle>
+    </div>
+  </div>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button mat-dialog-close [disabled]="saving()">Abbrechen</button>
+  <button
+    mat-flat-button
+    color="primary"
+    (click)="save()"
+    [disabled]="!isValid() || saving()"
+  >
+    <mat-icon>check</mat-icon>
+    <span>{{ saving() ? 'Wird gespeichert...' : 'Speichern' }}</span>
+  </button>
+</mat-dialog-actions>

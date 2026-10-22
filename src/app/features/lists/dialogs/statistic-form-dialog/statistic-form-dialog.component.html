@@ -1,0 +1,137 @@
+<h2 mat-dialog-title>
+  {{ data.statistic ? 'Statistik bearbeiten' : 'Neue Statistik konfigurieren' }}
+</h2>
+
+<mat-dialog-content class="dialog-content">
+  <div class="form-container">
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>Bezeichnung der Statistik</mat-label>
+      <input
+        matInput
+        [ngModel]="name()"
+        (ngModelChange)="name.set($event)"
+        placeholder="z.B. Anzahl gelesener Seiten pro Buch"
+        required
+      />
+    </mat-form-field>
+
+    <div class="two-col-row">
+      <mat-form-field appearance="outline" class="half-width">
+        <mat-label>Aggregation</mat-label>
+        <mat-select
+          [ngModel]="aggregation()"
+          (ngModelChange)="onAggregationChange($event)"
+        >
+          @for (agg of aggregations; track agg.value) {
+            <mat-option [value]="agg.value">{{ agg.label }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="half-width">
+        <mat-label>Wertfeld</mat-label>
+        <mat-select
+          [ngModel]="valueFieldId()"
+          (ngModelChange)="valueFieldId.set($event)"
+        >
+          @for (vf of availableValueFields(); track vf.id) {
+            <mat-option [value]="vf.id">{{ vf.label }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+    </div>
+
+    <mat-card appearance="outlined" class="dimensions-card">
+      <mat-card-content>
+        <div class="dimensions-header">
+          <div>
+            <strong>Dimensionen / Gruppierung (optional, 0..N)</strong>
+            <p class="hint-text">
+              Ohne Dimension wird eine Gesamt-Kennzahl berechnet. Mit einer oder mehreren Dimensionen erfolgt die Aufschlüsselung z.B. pro Tag, Buchtitel usw.
+            </p>
+          </div>
+        </div>
+
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Dimension hinzufügen</mat-label>
+          <mat-select
+            #dimSelect
+            (selectionChange)="addDimension($event.value); dimSelect.value = null"
+          >
+            @for (df of availableDimensionFields(); track df.id) {
+              <mat-option
+                [value]="df.id"
+                [disabled]="dimensionFieldIds().includes(df.id)"
+              >
+                {{ df.label }}
+              </mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        @if (dimensionFieldIds().length > 0) {
+          <div class="selected-dimensions-list">
+            @for (dimId of dimensionFieldIds(); track dimId; let idx = $index) {
+              <div class="dimension-item">
+                <span class="dim-badge">{{ idx + 1 }}. Dimension:</span>
+                <span class="dim-name">{{ getDimensionLabel(dimId) }}</span>
+                <span class="spacer"></span>
+                <button
+                  mat-icon-button
+                  type="button"
+                  (click)="moveDimension(idx, -1)"
+                  [disabled]="idx === 0"
+                  aria-label="Nach oben"
+                >
+                  <mat-icon>arrow_upward</mat-icon>
+                </button>
+                <button
+                  mat-icon-button
+                  type="button"
+                  (click)="moveDimension(idx, 1)"
+                  [disabled]="idx === dimensionFieldIds().length - 1"
+                  aria-label="Nach unten"
+                >
+                  <mat-icon>arrow_downward</mat-icon>
+                </button>
+                <button
+                  mat-icon-button
+                  color="warn"
+                  type="button"
+                  (click)="removeDimension(idx)"
+                  aria-label="Dimension entfernen"
+                >
+                  <mat-icon>close</mat-icon>
+                </button>
+              </div>
+            }
+          </div>
+        } @else {
+          <p class="no-dim-note">
+            Keine Dimension ausgewählt – Statistik wird als Gesamtwert-Kachel dargestellt.
+          </p>
+        }
+      </mat-card-content>
+    </mat-card>
+
+    <mat-slide-toggle
+      [ngModel]="includeHidden()"
+      (ngModelChange)="includeHidden.set($event)"
+    >
+      Ausgeblendete Einträge in Berechnung einbeziehen
+    </mat-slide-toggle>
+  </div>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button mat-dialog-close>Abbrechen</button>
+  <button
+    mat-flat-button
+    color="primary"
+    (click)="save()"
+    [disabled]="!isValid()"
+  >
+    <mat-icon>check</mat-icon>
+    <span>Statistik übernehmen</span>
+  </button>
+</mat-dialog-actions>

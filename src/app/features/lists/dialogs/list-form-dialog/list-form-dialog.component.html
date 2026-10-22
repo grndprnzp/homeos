@@ -1,0 +1,160 @@
+<h2 mat-dialog-title>
+  {{ isEdit() ? 'Liste bearbeiten' : 'Neue Liste anlegen' }}
+</h2>
+
+<mat-dialog-content class="dialog-content">
+  @if (errorMsg(); as err) {
+    <mat-card appearance="outlined" class="error-banner">
+      <mat-card-content>
+        <mat-icon color="warn">error_outline</mat-icon>
+        <span>{{ err }}</span>
+      </mat-card-content>
+    </mat-card>
+  }
+
+  <div class="form-container">
+    <div class="mode-section">
+      <label class="section-label">Art der Liste</label>
+      <mat-radio-group
+        [ngModel]="mode()"
+        (ngModelChange)="mode.set($event)"
+        [disabled]="isEdit()"
+        class="mode-radio-group"
+      >
+        <mat-card
+          appearance="outlined"
+          class="mode-card"
+          [class.mode-selected]="mode() === 'fixed'"
+          (click)="!isEdit() && mode.set('fixed')"
+        >
+          <mat-card-content>
+            <mat-radio-button value="fixed" [disabled]="isEdit()">
+              <strong>Liste mit fixem Datentyp</strong>
+            </mat-radio-button>
+            <p class="mode-desc">
+              Strukturierte Einträge auf Basis einer festen Datentyp-Vorlage. Ideal für Auswertungen und Statistiken über einzelne Felder.
+            </p>
+          </mat-card-content>
+        </mat-card>
+
+        <mat-card
+          appearance="outlined"
+          class="mode-card"
+          [class.mode-selected]="mode() === 'mixed'"
+          (click)="!isEdit() && mode.set('mixed')"
+        >
+          <mat-card-content>
+            <mat-radio-button value="mixed" [disabled]="isEdit()">
+              <strong>Gemischte Liste</strong>
+            </mat-radio-button>
+            <p class="mode-desc">
+              Nimmt schnelle Standard-Einträge oder beliebige Datentypen auf. Ideal für flexible Check-, Einkaufs- oder Notizlisten.
+            </p>
+          </mat-card-content>
+        </mat-card>
+      </mat-radio-group>
+    </div>
+
+    @if (mode() === 'fixed') {
+      <div class="datatype-picker-row">
+        <mat-form-field appearance="outline" class="datatype-select">
+          <mat-label>Datentyp-Vorlage auswählen</mat-label>
+          <mat-select
+            [ngModel]="dataTypeId()"
+            (ngModelChange)="dataTypeId.set($event)"
+            required
+          >
+            @for (dt of dataTypeService.dataTypes(); track dt.id) {
+              <mat-option [value]="dt.id">
+                {{ dt.name }} ({{ dt.fields.length }} Felder)
+              </mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        <button
+          mat-stroked-button
+          color="primary"
+          type="button"
+          (click)="openCreateDataTypeDialog()"
+        >
+          <mat-icon>add</mat-icon>
+          <span>Neuen Datentyp erstellen</span>
+        </button>
+      </div>
+    }
+
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>Name der Liste</mat-label>
+      <input
+        matInput
+        [ngModel]="name()"
+        (ngModelChange)="name.set($event)"
+        placeholder="z.B. Gelesene Bücher, Wocheneinkauf, Haushaltsaufgaben"
+        required
+      />
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>Beschreibung</mat-label>
+      <textarea
+        matInput
+        rows="2"
+        [ngModel]="description()"
+        (ngModelChange)="description.set($event)"
+        placeholder="Worum geht es in dieser Liste?"
+      ></textarea>
+    </mat-form-field>
+
+    <div class="two-col-row">
+      <mat-form-field appearance="outline" class="half-width">
+        <mat-label>Kategorie</mat-label>
+        <input
+          matInput
+          [ngModel]="category()"
+          (ngModelChange)="category.set($event)"
+          [matAutocomplete]="catAuto"
+          placeholder="z.B. Haushalt, Freizeit, Finanzen"
+        />
+        <mat-autocomplete #catAuto="matAutocomplete">
+          @for (cat of filteredCategories(); track cat) {
+            <mat-option [value]="cat">{{ cat }}</mat-option>
+          }
+        </mat-autocomplete>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="half-width">
+        <mat-label>Tags (mit Enter bestätigen)</mat-label>
+        <mat-chip-grid #tagChipGrid aria-label="Listen-Tags">
+          @for (tag of tags(); track tag; let idx = $index) {
+            <mat-chip-row (removed)="removeTag(idx)">
+              {{ tag }}
+              <button matChipRemove aria-label="Tag entfernen">
+                <mat-icon>cancel</mat-icon>
+              </button>
+            </mat-chip-row>
+          }
+        </mat-chip-grid>
+        <input
+          placeholder="Tag hinzufügen + Enter..."
+          [matChipInputFor]="tagChipGrid"
+          [matChipInputSeparatorKeyCodes]="separatorKeysCodes"
+          (matChipInputTokenEnd)="addTag($event)"
+        />
+      </mat-form-field>
+    </div>
+  </div>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button mat-dialog-close [disabled]="saving()">Abbrechen</button>
+  <button
+    mat-flat-button
+    color="primary"
+    (click)="save()"
+    [disabled]="!isValid() || saving()"
+  >
+    <mat-icon>check</mat-icon>
+    <span>{{ saving() ? 'Wird gespeichert...' : (isEdit() ? 'Änderungen speichern' : 'Liste erstellen') }}</span>
+  </button>
+</mat-dialog-actions>

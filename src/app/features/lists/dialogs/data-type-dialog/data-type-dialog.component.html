@@ -1,0 +1,311 @@
+<h2 mat-dialog-title>
+  @if (viewMode() === 'list') {
+    Datentyp-Vorlagen verwalten
+  } @else if (editingId()) {
+    Datentyp bearbeiten
+  } @else {
+    Neuen Datentyp erstellen
+  }
+</h2>
+
+<mat-dialog-content class="dialog-content">
+  @if (errorMsg(); as err) {
+    <mat-card appearance="outlined" class="error-banner">
+      <mat-card-content>
+        <mat-icon color="warn">error_outline</mat-icon>
+        <span>{{ err }}</span>
+      </mat-card-content>
+    </mat-card>
+  }
+
+  @if (viewMode() === 'list') {
+    <div class="list-header-row">
+      <p class="subtitle-text">
+        Einmal definierte Datentypen stehen als Vorlage für alle deine Listen zur Verfügung.
+      </p>
+      <button mat-flat-button color="primary" (click)="startCreateNew()">
+        <mat-icon>add</mat-icon>
+        <span>Neuer Datentyp</span>
+      </button>
+    </div>
+
+    @if (dataTypeService.dataTypes().length === 0) {
+      <mat-card appearance="outlined" class="empty-state-card">
+        <mat-card-content>
+          <mat-icon class="empty-icon">schema</mat-icon>
+          <p>Noch keine Datentyp-Vorlagen vorhanden.</p>
+          <button mat-stroked-button color="primary" (click)="startCreateNew()">
+            Erste Vorlage anlegen
+          </button>
+        </mat-card-content>
+      </mat-card>
+    } @else {
+      <div class="template-cards">
+        @for (dt of dataTypeService.dataTypes(); track dt.id) {
+          <mat-card appearance="outlined" class="template-card">
+            <mat-card-header>
+              <mat-icon mat-card-avatar>dataset</mat-icon>
+              <mat-card-title>{{ dt.name }}</mat-card-title>
+              <mat-card-subtitle>{{ dt.description || 'Keine Beschreibung' }}</mat-card-subtitle>
+            </mat-card-header>
+            <mat-card-content>
+              <mat-chip-set aria-label="Felder des Datentyps">
+                @for (f of dt.fields; track f.id) {
+                  <mat-chip>
+                    {{ f.label }} ({{ getFieldTypeLabel(f.type) }})
+                  </mat-chip>
+                }
+              </mat-chip-set>
+            </mat-card-content>
+            <mat-card-actions align="end">
+              <button mat-button (click)="startEdit(dt)">
+                <mat-icon>edit</mat-icon>
+                <span>Bearbeiten</span>
+              </button>
+              <button mat-button color="warn" (click)="deleteTemplate(dt)">
+                <mat-icon>delete</mat-icon>
+                <span>Löschen</span>
+              </button>
+            </mat-card-actions>
+          </mat-card>
+        }
+      </div>
+    }
+  } @else {
+    <div class="form-grid">
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Name des Datentyps</mat-label>
+        <input
+          matInput
+          [ngModel]="name()"
+          (ngModelChange)="name.set($event)"
+          placeholder="z.B. Leseliste, Einkaufsartikel, Trainingseinheit"
+          required
+        />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Beschreibung (optional)</mat-label>
+        <textarea
+          matInput
+          rows="2"
+          [ngModel]="description()"
+          (ngModelChange)="description.set($event)"
+          placeholder="Kurze Erklärung zum Verwendungszweck"
+        ></textarea>
+      </mat-form-field>
+
+      <div class="system-fields-info">
+        <mat-icon>info_outline</mat-icon>
+        <span>
+          Standardfelder (<strong>Eindeutige ID</strong>, <strong>Erstellungsdatum</strong>,
+          <strong>Ersteller</strong>, <strong>Zuständige Person</strong> und
+          <strong>Ausblenden</strong>) sind automatisch in jedem Eintrag enthalten.
+        </span>
+      </div>
+
+      <div class="fields-section-header">
+        <h3>Benutzerdefinierte Felder</h3>
+        <button mat-stroked-button color="primary" type="button" (click)="addField()">
+          <mat-icon>add</mat-icon>
+          <span>Feld hinzufügen</span>
+        </button>
+      </div>
+
+      @for (field of fields(); track field.id; let idx = $index) {
+        <mat-card appearance="outlined" class="field-editor-card">
+          <mat-card-content>
+            <div class="field-row-main">
+              <mat-form-field appearance="outline" class="field-label-input">
+                <mat-label>Feldname / Label</mat-label>
+                <input
+                  matInput
+                  [(ngModel)]="field.label"
+                  (ngModelChange)="fields.set(fields().slice())"
+                  placeholder="z.B. Buchtitel, Preis, Zuletzt gelesene Seite"
+                  required
+                />
+              </mat-form-field>
+
+              <mat-form-field appearance="outline" class="field-type-select">
+                <mat-label>Feldtyp</mat-label>
+                <mat-select
+                  [ngModel]="field.type"
+                  (ngModelChange)="onFieldTypeChange(field, $event)"
+                >
+                  @for (ft of fieldTypes; track ft.value) {
+                    <mat-option [value]="ft.value">{{ ft.label }}</mat-option>
+                  }
+                </mat-select>
+              </mat-form-field>
+
+              <div class="field-item-actions">
+                <button
+                  mat-icon-button
+                  type="button"
+                  (click)="moveField(idx, -1)"
+                  [disabled]="idx === 0"
+                  matTooltip="Nach oben"
+                >
+                  <mat-icon>arrow_upward</mat-icon>
+                </button>
+                <button
+                  mat-icon-button
+                  type="button"
+                  (click)="moveField(idx, 1)"
+                  [disabled]="idx === fields().length - 1"
+                  matTooltip="Nach unten"
+                >
+                  <mat-icon>arrow_downward</mat-icon>
+                </button>
+                <button
+                  mat-icon-button
+                  color="warn"
+                  type="button"
+                  (click)="removeField(idx)"
+                  [disabled]="fields().length <= 1"
+                  matTooltip="Feld entfernen"
+                >
+                  <mat-icon>delete_outline</mat-icon>
+                </button>
+              </div>
+            </div>
+
+            <div class="field-options-row">
+              <mat-checkbox
+                [(ngModel)]="field.required"
+                (ngModelChange)="fields.set(fields().slice())"
+              >
+                Pflichtfeld
+              </mat-checkbox>
+
+              @if (field.type === 'text') {
+                <mat-slide-toggle
+                  [(ngModel)]="field.autocomplete"
+                  (ngModelChange)="fields.set(fields().slice())"
+                >
+                  Autovervollständigung aktivieren
+                </mat-slide-toggle>
+              }
+
+              @if (field.type === 'select_text' || field.type === 'select_number') {
+                <mat-slide-toggle
+                  [(ngModel)]="field.multiple"
+                  (ngModelChange)="fields.set(fields().slice())"
+                >
+                  Mehrfachauswahl erlauben
+                </mat-slide-toggle>
+              }
+
+              @if (field.type === 'images') {
+                <mat-slide-toggle
+                  [(ngModel)]="field.multiple"
+                  (ngModelChange)="fields.set(fields().slice())"
+                >
+                  Mehrere Bilder pro Eintrag erlauben
+                </mat-slide-toggle>
+              }
+            </div>
+
+            @if (field.type === 'text' && field.autocomplete) {
+              <div class="autocomplete-source-row">
+                <mat-form-field appearance="outline" class="half-width">
+                  <mat-label>Datenquelle für Vorschläge</mat-label>
+                  <mat-select
+                    [(ngModel)]="field.autocompleteSourceListId"
+                    (ngModelChange)="field.autocompleteSourceFieldId = null; fields.set(fields().slice())"
+                  >
+                    <mat-option [value]="null">Aktuelle Liste (Standard)</mat-option>
+                    @for (list of listService.lists(); track list.id) {
+                      <mat-option [value]="list.id">{{ list.name }}</mat-option>
+                    }
+                  </mat-select>
+                </mat-form-field>
+
+                @if (field.autocompleteSourceListId) {
+                  <mat-form-field appearance="outline" class="half-width">
+                    <mat-label>Feld aus Referenzliste (optional)</mat-label>
+                    <mat-select
+                      [(ngModel)]="field.autocompleteSourceFieldId"
+                      (ngModelChange)="fields.set(fields().slice())"
+                    >
+                      <mat-option [value]="null">Gleicher Feldname / Titel</mat-option>
+                      @for (refField of getSourceListFields(field.autocompleteSourceListId); track refField.id) {
+                        <mat-option [value]="refField.id">{{ refField.label }}</mat-option>
+                      }
+                    </mat-select>
+                  </mat-form-field>
+                }
+              </div>
+            }
+
+            @if (field.type === 'select_text') {
+              <mat-form-field appearance="outline" class="full-width">
+                <mat-label>Auswahl-Optionen (Text) – mit Enter bestätigen</mat-label>
+                <mat-chip-grid #textChipGrid aria-label="Text-Optionen">
+                  @for (opt of field.options || []; track opt; let optIdx = $index) {
+                    <mat-chip-row (removed)="removeTextOption(field, optIdx)">
+                      {{ opt }}
+                      <button matChipRemove aria-label="Option entfernen">
+                        <mat-icon>cancel</mat-icon>
+                      </button>
+                    </mat-chip-row>
+                  }
+                </mat-chip-grid>
+                <input
+                  placeholder="Neue Option eingeben + Enter..."
+                  [matChipInputFor]="textChipGrid"
+                  [matChipInputSeparatorKeyCodes]="separatorKeysCodes"
+                  (matChipInputTokenEnd)="addTextOption(field, $event)"
+                />
+              </mat-form-field>
+            }
+
+            @if (field.type === 'select_number') {
+              <mat-form-field appearance="outline" class="full-width">
+                <mat-label>Auswahl-Optionen (Numerisch) – Zahl eingeben + Enter</mat-label>
+                <mat-chip-grid #numChipGrid aria-label="Numerische Optionen">
+                  @for (opt of field.numericOptions || []; track opt; let optIdx = $index) {
+                    <mat-chip-row (removed)="removeNumericOption(field, optIdx)">
+                      {{ opt }}
+                      <button matChipRemove aria-label="Zahl entfernen">
+                        <mat-icon>cancel</mat-icon>
+                      </button>
+                    </mat-chip-row>
+                  }
+                </mat-chip-grid>
+                <input
+                  type="number"
+                  placeholder="Zahl eingeben + Enter..."
+                  [matChipInputFor]="numChipGrid"
+                  [matChipInputSeparatorKeyCodes]="separatorKeysCodes"
+                  (matChipInputTokenEnd)="addNumericOption(field, $event)"
+                />
+              </mat-form-field>
+            }
+          </mat-card-content>
+        </mat-card>
+      }
+    </div>
+  }
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  @if (viewMode() === 'list') {
+    <button mat-button mat-dialog-close>Schließen</button>
+  } @else {
+    <button mat-button type="button" (click)="cancelForm()" [disabled]="saving()">
+      Abbrechen
+    </button>
+    <button
+      mat-flat-button
+      color="primary"
+      type="button"
+      (click)="save()"
+      [disabled]="!isValid() || saving()"
+    >
+      <mat-icon>save</mat-icon>
+      <span>{{ saving() ? 'Wird gespeichert...' : 'Datentyp speichern' }}</span>
+    </button>
+  }
+</mat-dialog-actions>

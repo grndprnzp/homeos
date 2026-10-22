@@ -1,1 +1,250 @@
-<p>my-lists-page works!</p>
+<div class="lists-page-container">
+  <div class="page-header">
+    <div class="header-titles">
+      <h1 class="page-title">Listen & Datentypen</h1>
+      <p class="page-subtitle">
+        Strukturiere deine Haushalts-, Lese-, Einkaufs- und Projektlisten mit eigenen Datentyp-Vorlagen und Statistiken.
+      </p>
+    </div>
+
+    @if (authService.user()) {
+      <div class="header-actions">
+        <button
+          mat-stroked-button
+          type="button"
+          (click)="openManageDataTypes()"
+        >
+          <mat-icon>dataset</mat-icon>
+          <span>Datentypen ({{ dataTypeService.dataTypes().length }})</span>
+        </button>
+        <button
+          mat-flat-button
+          color="primary"
+          type="button"
+          (click)="openCreateList()"
+        >
+          <mat-icon>add</mat-icon>
+          <span>Neue Liste</span>
+        </button>
+      </div>
+    }
+  </div>
+
+  @if (!authService.user()) {
+    <mat-card appearance="outlined" class="auth-prompt-card">
+      <mat-card-header>
+        <mat-icon mat-card-avatar color="primary">lock_open</mat-icon>
+        <mat-card-title>Anmeldung erforderlich</mat-card-title>
+        <mat-card-subtitle>
+          Melde dich an (oder nutze den Gast-Zugang), um Listen und Datentyp-Vorlagen in Firestore zu erstellen.
+        </mat-card-subtitle>
+      </mat-card-header>
+      <mat-card-content class="auth-card-wrapper">
+        <app-auth-card></app-auth-card>
+      </mat-card-content>
+    </mat-card>
+  } @else {
+    @if (listService.loadingLists()) {
+      <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+    }
+
+    <!-- Filter & Search Bar -->
+    <mat-card appearance="outlined" class="filter-card">
+      <mat-card-content>
+        <div class="filter-controls-row">
+          <mat-form-field appearance="outline" class="search-field">
+            <mat-label>Listen durchsuchen</mat-label>
+            <mat-icon matPrefix>search</mat-icon>
+            <input
+              matInput
+              [ngModel]="searchQuery()"
+              (ngModelChange)="searchQuery.set($event)"
+              placeholder="Name, Beschreibung, Tag..."
+            />
+            @if (searchQuery()) {
+              <button
+                matSuffix
+                mat-icon-button
+                aria-label="Suche zurücksetzen"
+                (click)="searchQuery.set('')"
+              >
+                <mat-icon>close</mat-icon>
+              </button>
+            }
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="category-filter-field">
+            <mat-label>Kategorie</mat-label>
+            <mat-select
+              [ngModel]="selectedCategory()"
+              (ngModelChange)="selectedCategory.set($event)"
+            >
+              <mat-option value="">Alle Kategorien</mat-option>
+              @for (cat of listService.existingCategories(); track cat) {
+                <mat-option [value]="cat">{{ cat }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+
+          <mat-slide-toggle
+            [ngModel]="groupByCategory()"
+            (ngModelChange)="groupByCategory.set($event)"
+          >
+            Nach Kategorie gruppieren
+          </mat-slide-toggle>
+        </div>
+
+        @if (listService.existingTags().length > 0) {
+          <div class="tags-filter-row">
+            <span class="tags-label">Tags:</span>
+            <mat-chip-listbox aria-label="Nach Tag filtern">
+              @for (tag of listService.existingTags(); track tag) {
+                <mat-chip-option
+                  [selected]="selectedTag() === tag"
+                  (click)="toggleTagFilter(tag)"
+                >
+                  #{{ tag }}
+                </mat-chip-option>
+              }
+            </mat-chip-listbox>
+          </div>
+        }
+      </mat-card-content>
+    </mat-card>
+
+    @if (filteredLists().length === 0) {
+      <mat-card appearance="outlined" class="empty-state-card">
+        <mat-card-content>
+          <mat-icon class="empty-state-icon">format_list_bulleted_add</mat-icon>
+          @if (listService.lists().length === 0) {
+            <h2>Noch keine Listen erstellt</h2>
+            <p>
+              Lege jetzt deine erste gemischte Liste oder eine strukturierte Liste mit eigenem Datentyp an.
+            </p>
+            <div class="empty-actions">
+              <button
+                mat-stroked-button
+                type="button"
+                (click)="openManageDataTypes()"
+              >
+                <mat-icon>dataset</mat-icon>
+                <span>Datentyp-Vorlage erstellen</span>
+              </button>
+              <button
+                mat-flat-button
+                color="primary"
+                type="button"
+                (click)="openCreateList()"
+              >
+                <mat-icon>add</mat-icon>
+                <span>Erste Liste anlegen</span>
+              </button>
+            </div>
+          } @else {
+            <h2>Keine Listen für diesen Filter gefunden</h2>
+            <button mat-stroked-button type="button" (click)="resetFilters()">
+              Filter zurücksetzen
+            </button>
+          }
+        </mat-card-content>
+      </mat-card>
+    } @else {
+      @for (group of groupedLists(); track group.category) {
+        <section class="category-section">
+          @if (groupByCategory()) {
+            <div class="category-heading">
+              <mat-icon>folder_open</mat-icon>
+              <h2>{{ group.category }}</h2>
+              <span class="count-pill">{{ group.lists.length }}</span>
+            </div>
+          }
+
+          <div class="lists-grid">
+            @for (list of group.lists; track list.id) {
+              <mat-card
+                appearance="outlined"
+                class="list-item-card"
+                [routerLink]="['/my-lists', list.id]"
+              >
+                <mat-card-header>
+                  <mat-icon mat-card-avatar color="primary">
+                    {{ list.mode === 'fixed' ? 'table_chart' : 'checklist' }}
+                  </mat-icon>
+                  <mat-card-title>{{ list.name }}</mat-card-title>
+                  <mat-card-subtitle>
+                    @if (list.mode === 'fixed') {
+                      Fixer Datentyp: {{ getDataTypeName(list.dataTypeId) }}
+                    } @else {
+                      Gemischte Liste
+                    }
+                  </mat-card-subtitle>
+                </mat-card-header>
+
+                <mat-card-content class="list-card-body">
+                  @if (list.description) {
+                    <p class="list-description">{{ list.description }}</p>
+                  }
+
+                  <div class="list-badges-row">
+                    @if (list.category) {
+                      <span class="meta-badge">
+                        <mat-icon>label_important</mat-icon>
+                        {{ list.category }}
+                      </span>
+                    }
+                    @if (list.statistics.length > 0) {
+                      <span class="meta-badge">
+                        <mat-icon>insights</mat-icon>
+                        {{ list.statistics.length }} Statistik(en)
+                      </span>
+                    }
+                  </div>
+
+                  @if (list.tags.length > 0) {
+                    <mat-chip-set aria-label="Listen-Tags">
+                      @for (tag of list.tags; track tag) {
+                        <mat-chip>#{{ tag }}</mat-chip>
+                      }
+                    </mat-chip-set>
+                  }
+                </mat-card-content>
+
+                <mat-divider></mat-divider>
+
+                <mat-card-actions align="end">
+                  <button
+                    mat-button
+                    color="primary"
+                    [routerLink]="['/my-lists', list.id]"
+                  >
+                    <mat-icon>open_in_new</mat-icon>
+                    <span>Öffnen</span>
+                  </button>
+                  <button
+                    mat-icon-button
+                    type="button"
+                    (click)="openEditList(list, $event)"
+                    matTooltip="Liste bearbeiten"
+                    aria-label="Liste bearbeiten"
+                  >
+                    <mat-icon>edit</mat-icon>
+                  </button>
+                  <button
+                    mat-icon-button
+                    color="warn"
+                    type="button"
+                    (click)="deleteList(list, $event)"
+                    matTooltip="Liste löschen"
+                    aria-label="Liste löschen"
+                  >
+                    <mat-icon>delete_outline</mat-icon>
+                  </button>
+                </mat-card-actions>
+              </mat-card>
+            }
+          </div>
+        </section>
+      }
+    }
+  }
+</div>

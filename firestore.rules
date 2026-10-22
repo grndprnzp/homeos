@@ -1,18 +1,233 @@
-rules_version='2'
+rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
+
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: /dataTypes/{dataTypeId}
+    // Document ID: auto-generated or custom string ID
+    // Fields:
+    //   - ownerId: string (required, immutable, size 1..128) - UID of the creator
+    //   - name: string (required, size 1..200) - Template name
+    //   - description: string | null (optional, size 0..2000) - Template description
+    //   - fields: list (required, max 100 items) - Field definitions for the data type
+    //   - createdAt: timestamp (required, immutable) - Creation timestamp
+    //   - updatedAt: timestamp (required) - Last modification timestamp
+    //
+    // Collection: /lists/{listId}
+    // Document ID: auto-generated or custom string ID
+    // Fields:
+    //   - ownerId: string (required, immutable, size 1..128) - UID of the creator
+    //   - name: string (required, size 1..200) - List title
+    //   - description: string | null (optional, size 0..2000) - List description
+    //   - category: string | null (optional, size 0..200) - List category
+    //   - mode: string (required, enum: ['fixed', 'mixed']) - List typing mode
+    //   - dataTypeId: string | null (optional, size 0..200) - Associated dataType ID for fixed lists
+    //   - tags: list (required, max 100 items) - Tags assigned to the list
+    //   - statistics: list (required, max 50 items) - Configured statistic definitions
+    //   - createdAt: timestamp (required, immutable) - Creation timestamp
+    //   - updatedAt: timestamp (required) - Last modification timestamp
+    //
+    // Subcollection: /lists/{listId}/entries/{entryId}
+    // Document ID: auto-generated or custom string ID
+    // Fields:
+    //   - ownerId: string (required, immutable, size 1..128) - UID of the creator
+    //   - listId: string (required, immutable, must match path {listId}) - Parent list ID
+    //   - dataTypeId: string | null (optional, size 0..200) - DataType ID used for this entry
+    //   - title: string | null (optional, size 0..500) - Optional entry label/title
+    //   - createdBy: string (required, size 1..200) - Display name or identifier of creator
+    //   - assignee: string | null (optional, size 0..200) - Optional responsible person
+    //   - hidden: bool (required) - Whether entry is hidden/checked off in list view
+    //   - values: map (required, max 100 keys) - Dynamic field values keyed by fieldId
+    //   - attachments: list (required, max 50 items) - Uploaded image/file attachments metadata
+    //   - createdAt: timestamp (required, immutable) - Creation timestamp
+    //   - updatedAt: timestamp (required) - Last modification timestamp
+    //
+    // ===============================================================
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+
+    // Verify the request is from an authenticated user
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // Verify the authenticated user owns the existing resource
+    function isResourceOwner() {
+      return isAuthenticated() && resource.data.ownerId == request.auth.uid;
+    }
+
+    // Verify the authenticated user is setting themselves as the owner on the new/updated resource
+    function isRequestOwner() {
+      return isAuthenticated() &&
+             request.resource.data.ownerId is string &&
+             request.resource.data.ownerId == request.auth.uid;
+    }
+
+    // Ensure ownerId is not modified during an update
+    function ownerUnchanged() {
+      return request.resource.data.ownerId == resource.data.ownerId;
+    }
+
+    // Ensure createdAt timestamp is not modified during an update
+    function createdAtUnchanged() {
+      return request.resource.data.createdAt == resource.data.createdAt;
+    }
+
+    // Validate that all required fields are present on the incoming document
+    function hasRequiredFields(data, requiredFields) {
+      return data.keys().hasAll(requiredFields);
+    }
+
+    // Validate that the incoming document contains no extraneous fields outside the allowed set
+    function hasOnlyAllowedFields(data, allowedFields) {
+      return data.keys().hasOnly(allowedFields);
+    }
+
+    // Validate a required string field with minimum and maximum length bounds
+    function isValidString(val, minLen, maxLen) {
+      return val is string && val.size() >= minLen && val.size() <= maxLen;
+    }
+
+    // Validate an optional or nullable string field with length bounds
+    function isValidOptionalString(data, field, minLen, maxLen) {
+      return !(field in data) ||
+             data[field] == null ||
+             (data[field] is string &&
+              data[field].size() >= minLen &&
+              data[field].size() <= maxLen);
+    }
+
+    // Validate that a field is a list within a maximum size limit
+    function isValidList(val, maxSize) {
+      return val is list && val.size() <= maxSize;
+    }
+
+    // Validate that a field is a map within a maximum key count limit
+    function isValidMap(val, maxKeys) {
+      return val is map && val.size() <= maxKeys;
+    }
+
+    // ===============================================================
+    // Domain Validators (Used in BOTH create and update rules)
+    // ===============================================================
+
+    function isValidDataType(data) {
+      let requiredFields = ['ownerId', 'name', 'fields', 'createdAt', 'updatedAt'];
+      let allowedFields = ['ownerId', 'name', 'description', 'fields', 'createdAt', 'updatedAt'];
+
+      return hasRequiredFields(data, requiredFields) &&
+             hasOnlyAllowedFields(data, allowedFields) &&
+             isValidString(data.ownerId, 1, 128) &&
+             isValidString(data.name, 1, 200) &&
+             isValidOptionalString(data, 'description', 0, 2000) &&
+             isValidList(data.fields, 100) &&
+             data.createdAt is timestamp &&
+             data.updatedAt is timestamp;
+    }
+
+    function isValidListDoc(data) {
+      let requiredFields = ['ownerId', 'name', 'mode', 'tags', 'statistics', 'createdAt', 'updatedAt'];
+      let allowedFields = [
+        'ownerId', 'name', 'description', 'category', 'mode',
+        'dataTypeId', 'tags', 'statistics', 'createdAt', 'updatedAt'
+      ];
+
+      return hasRequiredFields(data, requiredFields) &&
+             hasOnlyAllowedFields(data, allowedFields) &&
+             isValidString(data.ownerId, 1, 128) &&
+             isValidString(data.name, 1, 200) &&
+             isValidOptionalString(data, 'description', 0, 2000) &&
+             isValidOptionalString(data, 'category', 0, 200) &&
+             data.mode is string && (data.mode == 'fixed' || data.mode == 'mixed') &&
+             isValidOptionalString(data, 'dataTypeId', 0, 200) &&
+             isValidList(data.tags, 100) &&
+             isValidList(data.statistics, 50) &&
+             data.createdAt is timestamp &&
+             data.updatedAt is timestamp;
+    }
+
+    function isValidListEntry(data, listId) {
+      let requiredFields = [
+        'ownerId', 'listId', 'createdBy', 'hidden',
+        'values', 'attachments', 'createdAt', 'updatedAt'
+      ];
+      let allowedFields = [
+        'ownerId', 'listId', 'dataTypeId', 'title', 'createdBy',
+        'assignee', 'hidden', 'values', 'attachments', 'createdAt', 'updatedAt'
+      ];
+
+      return hasRequiredFields(data, requiredFields) &&
+             hasOnlyAllowedFields(data, allowedFields) &&
+             isValidString(data.ownerId, 1, 128) &&
+             isValidString(data.listId, 1, 200) &&
+             data.listId == listId &&
+             isValidOptionalString(data, 'dataTypeId', 0, 200) &&
+             isValidOptionalString(data, 'title', 0, 500) &&
+             isValidString(data.createdBy, 1, 200) &&
+             isValidOptionalString(data, 'assignee', 0, 200) &&
+             data.hidden is bool &&
+             isValidMap(data.values, 100) &&
+             isValidList(data.attachments, 50) &&
+             data.createdAt is timestamp &&
+             data.updatedAt is timestamp;
+    }
+
+    // ===============================================================
+    // Collection Security Rules
+    // ===============================================================
+
+    // User-defined reusable data type templates
+    match /dataTypes/{dataTypeId} {
+      allow read, delete: if isResourceOwner();
+
+      allow create: if isRequestOwner() &&
+                       isValidDataType(request.resource.data);
+
+      allow update: if isResourceOwner() &&
+                       isRequestOwner() &&
+                       ownerUnchanged() &&
+                       createdAtUnchanged() &&
+                       isValidDataType(request.resource.data);
+    }
+
+    // User lists (fixed or mixed mode) and their entries
+    match /lists/{listId} {
+      allow read, delete: if isResourceOwner();
+
+      allow create: if isRequestOwner() &&
+                       isValidListDoc(request.resource.data);
+
+      allow update: if isResourceOwner() &&
+                       isRequestOwner() &&
+                       ownerUnchanged() &&
+                       createdAtUnchanged() &&
+                       isValidListDoc(request.resource.data);
+
+      // Entries belonging to a specific list
+      match /entries/{entryId} {
+        allow read, delete: if isResourceOwner();
+
+        allow create: if isRequestOwner() &&
+                         isValidListEntry(request.resource.data, listId);
+
+        allow update: if isResourceOwner() &&
+                         isRequestOwner() &&
+                         ownerUnchanged() &&
+                         createdAtUnchanged() &&
+                         request.resource.data.listId == resource.data.listId &&
+                         isValidListEntry(request.resource.data, listId);
+      }
+    }
+
+    // Default deny all other collections and paths
     match /{document=**} {
-      // This rule allows anyone with your database reference to view, edit,
-      // and delete all data in your database. It is useful for getting
-      // started, but it is configured to expire after 30 days because it
-      // leaves your app open to attackers. At that time, all client
-      // requests to your database will be denied.
-      //
-      // Make sure to write security rules for your app before that time, or
-      // else all client requests to your database will be denied until you
-      // update your rules.
-      allow read, write: if request.time < timestamp.date(2026, 11, 14);
+      allow read, write: if false;
     }
   }
 }

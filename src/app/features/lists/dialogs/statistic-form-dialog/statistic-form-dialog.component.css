@@ -1,0 +1,67 @@
+.dialog-content {
+  min-width: min(560px, 85vw);
+  max-height: 75vh;
+  padding-top: 8px;
+}
+
+.form-container {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.full-width {
+  width: 100%;
+}
+
+.two-col-row {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.half-width {
+  flex: 1 1 220px;
+}
+
+.hint-text {
+  margin: 4px 0 12px 0;
+  font-size: 0.85rem;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.selected-dimensions-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.dimension-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  background-color: var(--mat-sys-surface-container);
+}
+
+.dim-badge {
+  font-size: 0.8rem;
+  color: var(--mat-sys-primary);
+  font-weight: 500;
+}
+
+.dim-name {
+  font-weight: 500;
+}
+
+.spacer {
+  flex: 1;
+}
+
+.no-dim-note {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--mat-sys-on-surface-variant);
+  font-style: italic;
+}
